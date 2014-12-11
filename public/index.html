@@ -21,14 +21,21 @@
     </div>
 
   <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.js"></script>
   <script src="/vendor/slider-master/js/jssor.js"></script>
   <script src="/vendor/slider-master/js/jssor.slider.js"></script>
   <script src="/socket.io/socket.io.js"></script>
 
   <script>
+    var SLIDE_DURATION = 4500;
+    var NEW_SLIDE_INDEX_MIN = 66;  // ~5 minutes away
+    var NEW_SLIDE_INDEX_MAX = 133; // ~10 minutes away
+
     $(function() {
       var jssor_slider1 = null; 
       var photos = [];
+      var n = 0;
+
 
       var codes = [
         {$Duration:700,$Opacity:2,$Brother:{$Duration:1000,$Opacity:2}}, //fade twins
@@ -43,8 +50,19 @@
       var socket = io();
       socket.on('addImages', function(msg) {
         console.log('received images: ', msg);
+
+        for(i = 0; i < msg.length; i++) {
+          var where = photos.length;
+          if(photos.length > NEW_SLIDE_INDEX_MAX) {
+            where = photos.length - _.random(NEW_SLIDE_INDEX_MIN, NEW_SLIDE_INDEX_MAX);
+          }
+          console.log('inserting ' + msg[i] + ' at position ' + where);
+          photos.splice(where, 0, msg[i]);
+        }
+
         photos = photos.concat(msg);
         if(photos.length && !jssor_slider1) {
+          photos = shuffle(photos);
           makeSlider();
         } 
 
@@ -70,7 +88,6 @@
         return array;
       }
 
-      var n = 0;
 
       function getNextPhoto() {
         if(n >= photos.length)  {
@@ -83,21 +100,12 @@
       }
 
       function makeSlider() { 
-        $(".img0 img").attr("src2", photos[0]);
-        $(".img1 img").attr("src2", photos[1]);
-        $(".img2 img").attr("src2", photos[2]);
-        $(".img3 img").attr("src2", photos[3]);
-        $(".img4 img").attr("src2", photos[4]);
-
-        var n = 0;
-
-
         jssor_slider1 = new $JssorSlider$('container', {
           $AutoPlay: true, 
           $FillMode: 1,
           $SlideEasing: $JssorEasing$.$EaseOutQuint,
           $SlideDuration: 1500,
-          $AutoPlayInterval: 4500,
+          $AutoPlayInterval: SLIDE_DURATION,
           $SlideshowOptions: {                                //Options which specifies enable slideshow or not
               $Class: $JssorSlideshowRunner$,                 //Class to create instance of slideshow
               $Transitions: codes,                            //Transitions to play slide, see jssor slideshow transition builder
@@ -108,7 +116,7 @@
 
           $NextImage: function() {
             var photo = getNextPhoto();
-            console.log('next photo', photo);
+            console.log('next photo (' + n + ')', photo);
             return photo;
           }
 
