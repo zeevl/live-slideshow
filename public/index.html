@@ -1,121 +1,122 @@
 <!DOCTYPE html>
-<!-- saved from url=(0041)http://greweb.me/glsl-transition/example/ -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta charset="UTF-8">
-  <title>GLSL Transition Example</title>
+<html>
+  <head>
   <style>
-
-    html, body {
-      width: 927px;
-      height: 327px;
-      margin: 0;
-      padding: 0;
-    }
     body {
-      text-align: center;
       background: black;
-      color: white;
-    }
-    h1 {
-      font: 1.4em sans-serif;
-    }
-    p {
-      font: 1em monospace;
-    }
-    p label {
-      text-align: right;
-      display: inline-block;
-      min-width: 200px;
-    }
-    p input, p select, p .readonly {
-      width: 250px;
-    }
-    p .readonly {
-      display: inline-block;
-      text-align: left;
-      padding: 2px 5px;
-      background: #333;
-      color: #ccc;
-    }
-    p .value {
-      display: inline-block;
-      width: 50px;
-      text-align: left;
-    }
-    canvas {
-      background: #222;
-    }
-
-    #wrapper {
-      display: none;
-      margin: 0 auto;
-      width: 1250px
-    }
-    #viewport {
-      width: 927px;
-      height: 327px;
-    }
-    #props {
-      width: 600px;
-      float: left;
-    }
-    @media (max-width: 1250px) {
-      #wrapper {
-        width: 600px;
-      }
-    }
-    footer {
-      clear: both;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #222;
-      color: #999;
-    }
-    footer a {
-      color: #ccc;
     }
   </style>
-</head>
-<body>
-  <canvas id="viewport"></canvas>
-  <div id="wrapper">
-    <a href="https://github.com/gre/glsl-transition"><img style="position: absolute; top: 0; left: 0; border: 0;" src="./GLSL Transition Example_files/forkme_left_white_ffffff.png" alt="Fork me on GitHub"></a>
+  </head>
+  <body>
+  <div id='container'  style="position: relative; top: 0px; left: 0px; width: 600px; height: 300px;">
+    <div u='slides' id='slide-container' style="cursor: move; position: absolute; overflow: hidden; left: 0px; top: 0px; width: 600px; height: 300px;">
+        <div class="img0"><img u="image" src2=""></div>
+        <div class="img1"><img u="image" src2=""></div>
+        <div class="img2"><img u="image" src2=""></div>
+        <div class="img3"><img u="image" src2=""></div>
+        <div class="img4"><img u="image" src2=""></div>
+        <div class="img5"><img u="image" src2=""></div>
 
-    <h1>GLSL-Transition</h1>
-    <div id="props">
-      <p>
-        <label for="transition">Transition:</label>
-        <select id="transition"><option value="squeeze">squeeze</option><option value="page">page</option><option value="squares1">squares1</option><option value="squares2">squares2</option><option value="flash">flash</option><option value="ripple">ripple</option><option value="flyeye1">flyeye1</option><option value="flyeye2">flyeye2</option><option value="flyeye3">flyeye3</option><option value="doorway">doorway</option><option value="swap">swap</option><option value="wipe1">wipe1</option><option value="wipe2">wipe2</option><option value="wipe3">wipe3</option><option value="wipe4">wipe4</option><option value="rainbowwipe">rainbowwipe</option><option value="heartwipe">heartwipe</option><option value="circleopen">circleopen</option><option value="fadegrayscale">fadegrayscale</option><option value="fadetowhite">fadetowhite</option><option value="fadetoblack">fadetoblack</option><option value="blur">blur</option><option value="wind">wind</option></select>
-        <span class="value">&nbsp;</span>
-      </p>
-      <p>
-        <label for="duration">Transition Duration:</label>
-        <input type="range" id="duration" value="1200" min="1" max="3000">
-        <span class="value">
-          <span id="durationValue">1200</span>ms
-        </span>
-      </p>
-      <p>
-        <label for="delay">Delay:</label>
-        <input type="range" id="delay" value="500" min="0" max="3000">
-        <span class="value">
-          <span id="delayValue">500</span>ms
-        </span>
-      </p>
-      <p>
-        <label for="easingtext">Easing:</label>
-        <span id="easingtext" class="readonly">BezierEasing(0.25,0.25,0.75,0.75)</span>
-        <span class="value"></span>
-      </p>
-      <p>
-        <label>&nbsp;</label>
-        <canvas width="260" height="260" id="easing"></canvas>
-        <span class="value"></span>
-      </p>
+      </div>
     </div>
-  </div>
 
-  <script src="bundle.js"></script>
+  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="/vendor/slider-master/js/jssor.js"></script>
+  <script src="/vendor/slider-master/js/jssor.slider.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    $(function() {
+      var jssor_slider1 = null; 
+      var photos = [];
+
+      var codes = [
+        {$Duration:700,$Opacity:2,$Brother:{$Duration:1000,$Opacity:2}}, //fade twins
+        {$Duration:1200,$Opacity:2}, // fade
+      ]
+
+      $("#container, #slide-container")
+        .width($(window).innerWidth())
+        .height($(window).innerHeight());
 
 
-</body></html>
+      var socket = io();
+      socket.on('addImages', function(msg) {
+        console.log('received images: ', msg);
+        photos = photos.concat(msg);
+        if(photos.length && !jssor_slider1) {
+          makeSlider();
+        } 
+
+      });
+
+      function shuffle(array) {
+        var counter = array.length, temp, index;
+
+        // While there are elements in the array
+        while (counter > 0) {
+          // Pick a random index
+          index = Math.floor(Math.random() * counter);
+
+          // Decrease counter by 1
+          counter--;
+
+          // And swap the last element with it
+          temp = array[counter];
+          array[counter] = array[index];
+          array[index] = temp;
+        }
+
+        return array;
+      }
+
+      var n = 0;
+
+      function getNextPhoto() {
+        if(n >= photos.length)  {
+          console.log('reshuffling');
+          photos = shuffle(photos);
+          n = 0;
+        }
+
+        return photos[n++];
+      }
+
+      function makeSlider() { 
+        $(".img0 img").attr("src2", photos[0]);
+        $(".img1 img").attr("src2", photos[1]);
+        $(".img2 img").attr("src2", photos[2]);
+        $(".img3 img").attr("src2", photos[3]);
+        $(".img4 img").attr("src2", photos[4]);
+
+        var n = 0;
+
+
+        jssor_slider1 = new $JssorSlider$('container', {
+          $AutoPlay: true, 
+          $FillMode: 1,
+          $SlideEasing: $JssorEasing$.$EaseOutQuint,
+          $SlideDuration: 1500,
+          $AutoPlayInterval: 4500,
+          $SlideshowOptions: {                                //Options which specifies enable slideshow or not
+              $Class: $JssorSlideshowRunner$,                 //Class to create instance of slideshow
+              $Transitions: codes,                            //Transitions to play slide, see jssor slideshow transition builder
+              $TransitionsOrder: 0,                           //The way to choose transition to play slide, 1 Sequence, 0 Random
+              $ShowLink: 2,                                   //0 After Slideshow, 2 Always
+              $ContentMode: false                             //Whether to trait content as slide, otherwise trait an image as slide
+          }, 
+
+          $NextImage: function() {
+            var photo = getNextPhoto();
+            console.log('next photo', photo);
+            return photo;
+          }
+
+        });
+      }
+    });
+
+  </script>
+  </body>
+
+</html>
